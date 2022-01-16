@@ -1,7 +1,7 @@
 # social_app
 
-## A new Flutter application As Facebook Clone
-## That Can comment, post ,Chat with someone
+### A new Flutter application As Facebook Clone
+### That Can comment, post ,Chat with someone
 
 # Getting Started
 
