@@ -1,9 +1,9 @@
-## social_app
+# social_app
 
-# A new Flutter application As Facebook Clone
-# That Can comment, post ,Chat with someone
+## A new Flutter application As Facebook Clone
+## That Can comment, post ,Chat with someone
 
-## Getting Started
+# Getting Started
 
 This project is a starting point for a Flutter application.
 
