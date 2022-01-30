@@ -55,7 +55,7 @@ class ChatCubit extends Cubit<ChatCubitStates> {
         .collection('chats')
         .doc(uId)
         .collection('messages')
-        .add(MessageModel(DateTime.now().toString(),message,receiverId,uId,'').toMap())
+        .add(MessageModel(DateTime.now().toString(),message,receiverId,uId,'','').toMap())
         .catchError((onError){
       print(onError.toString());
       emit(ChatCubitSendMessageErrorState());
@@ -66,7 +66,7 @@ class ChatCubit extends Cubit<ChatCubitStates> {
         .collection('chats')
         .doc(receiverId)
         .collection('messages')
-        .add(MessageModel(DateTime.now().toString(),message,receiverId,uId,'').toMap())
+        .add(MessageModel(DateTime.now().toString(),message,receiverId,uId,'','').toMap())
         .then((value) {
       emit(ChatCubitSendMessageSuccessState());
     })
@@ -122,6 +122,53 @@ class ChatCubit extends Cubit<ChatCubitStates> {
 
   }
 
+  XFile selectedMessageVideo;
+  File fileMessageVideo;
+
+  Future<void> pickMessageVideo(bool camera,receiverId) async {
+    Permission.storage.request().then((value) async {
+      if(value.isGranted)
+      {
+        selectedMessageVideo =  await ImagePicker().pickVideo(source:camera?ImageSource.camera: ImageSource.gallery,maxDuration: Duration(minutes: 2));
+        if (selectedMessageVideo != null) {
+          {
+            fileMessageVideo = File(selectedMessageVideo.path);
+            uploadMessageVideo(receiverId);
+          }
+        } else {
+          print('something went wrong');
+        }
+      }
+
+    });
+
+  }
+
+  String messageVideo;
+
+  void uploadMessageVideo(receiverId) {
+    emit(ChatCubitUploadingMessageVideoState());
+    firebase_storage.FirebaseStorage.instance
+        .ref()
+        .child('messages/${Uri
+        .file(fileMessageVideo.path)
+        .pathSegments
+        .last}')
+        .putFile(fileMessageVideo)
+        .then((value) {
+      fileMessageVideo = null;
+      value.ref.getDownloadURL().then((value) {
+        messageVideo = value.toString();
+        sendVideoToChat(video: messageVideo.toString(),receiverId: receiverId,hasVideo: true);
+      }).catchError((onError) {
+        print('error on add message image ' + onError.toString());
+      });
+    }).catchError((onError) {
+      print('error on get download url ' + onError.toString());
+    });
+
+  }
+
   String messageImage;
 
   void uploadMessageImage(receiverId) {
@@ -162,7 +209,7 @@ class ChatCubit extends Cubit<ChatCubitStates> {
         .collection('chats')
         .doc(uId)
         .collection('messages')
-        .add(MessageModel(DateTime.now().toString(),'',receiverId,uId,image).toMap())
+        .add(MessageModel(DateTime.now().toString(),'',receiverId,uId,image,'').toMap())
         .catchError((onError){
       print(onError.toString());
       emit(ChatCubitSendMessageErrorState());
@@ -173,10 +220,47 @@ class ChatCubit extends Cubit<ChatCubitStates> {
         .collection('chats')
         .doc(receiverId)
         .collection('messages')
-        .add(MessageModel(DateTime.now().toString(),'',receiverId,uId,image).toMap())
+        .add(MessageModel(DateTime.now().toString(),'',receiverId,uId,image,'').toMap())
         .then((value) {
       emit(ChatCubitSendMessageSuccessState());
       sendNotification(image,receiverId,'',);
+
+    })
+        .catchError((onError){
+      print(onError.toString());
+      emit(ChatCubitSendMessageErrorState());
+    });
+  }
+
+  void sendVideoToChat(
+      {
+        @required String video,
+        @required String receiverId,
+        @required bool hasVideo
+      })
+  {
+    emit(ChatCubitSendMessageLoadingState());
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(receiverId)
+        .collection('chats')
+        .doc(uId)
+        .collection('messages')
+        .add(MessageModel(DateTime.now().toString(),'',receiverId,uId,'',video).toMap())
+        .catchError((onError){
+      print(onError.toString());
+      emit(ChatCubitSendMessageErrorState());
+    });
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(uId)
+        .collection('chats')
+        .doc(receiverId)
+        .collection('messages')
+        .add(MessageModel(DateTime.now().toString(),'',receiverId,uId,'',video).toMap())
+        .then((value) {
+      emit(ChatCubitSendMessageSuccessState());
+      //sendNotification(video,receiverId,'',);
 
     })
         .catchError((onError){

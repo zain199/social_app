@@ -9,7 +9,10 @@ class ChatCubitSendMessageErrorState extends ChatCubitStates{}
 
 class ChatCubitSendMessageLoadingState extends ChatCubitStates{}
 
+
 class ChatCubitGetMessagesSuccessState extends ChatCubitStates{}
 
 class ChatCubitUploadingMessageImageState extends ChatCubitStates{}
+
+class ChatCubitUploadingMessageVideoState extends ChatCubitStates{}
 

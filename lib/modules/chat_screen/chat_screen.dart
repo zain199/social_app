@@ -1,7 +1,11 @@
+import 'dart:html';
+
+import 'package:better_player/better_player.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:conditional_builder/conditional_builder.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:social_app/layout/cubit/social_home_cubit.dart';
 import 'package:social_app/layout/cubit/social_home_cubit_states.dart';
@@ -16,6 +20,8 @@ import 'package:social_app/shared/styles/colors.dart';
 import 'package:social_app/models/notification__chat__model.dart';
 import 'package:social_app/shared/styles/icon_broken.dart';
 import 'package:social_app/shared/methods.dart';
+import 'package:social_app/shared/widgets/Video_Player.dart';
+import 'package:video_player/video_player.dart';
 
 class ChatScreen extends StatelessWidget {
   String receiverImage;
@@ -156,12 +162,12 @@ class ChatScreen extends StatelessWidget {
                                       children: [
                                         IconButton(
                                           onPressed: () {
-                                            showBottomSheet(context: context, builder: (context)=>bottomSheetBuilder(context)) ;
+                                            showBottomSheet(context: context, builder: (context)=>bottomSheetChooseBuilder(context)) ;
                                           },
                                           color: defColor,
                                           icon: Icon(IconBroken.Camera),
                                         ),
-                                        if(state is ChatCubitUploadingMessageImageState)
+                                        if(state is ChatCubitUploadingMessageImageState||state is ChatCubitUploadingMessageVideoState)
                                           Padding(
                                             padding: const EdgeInsets.symmetric(vertical: 2.5),
                                             child: CircularProgressIndicator(strokeWidth: 1.5),
@@ -216,9 +222,10 @@ class ChatScreen extends StatelessWidget {
           textAlign: TextAlign.center,
         ): InkWell(
           onTap: (){
+            if(model.image!='')
             NavigateTo(context, ImageViewer(model.image));
           },
-          child: Container(
+          child:model.image!=''? Container(
             height: 300.0,
             width: width-100.0,
             padding: EdgeInsets.all(0.0),
@@ -230,7 +237,16 @@ class ChatScreen extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(10.0),
             ),
+          ):Container(
+          height: 300.0,
+          width: width - 100.0,
+          padding: EdgeInsets.all(0.0),
+          clipBehavior: Clip.antiAliasWithSaveLayer,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10.0),
           ),
+          child: Video_Player(videoPlayerController: VideoPlayerController.network(model.video),),
+        ),
         )
       ),
     );
@@ -250,9 +266,10 @@ class ChatScreen extends StatelessWidget {
           textAlign: TextAlign.center,
         ): InkWell(
           onTap: (){
+            if(model.image!='')
             NavigateTo(context, ImageViewer(model.image));
           },
-          child: Container(
+          child:model.image!=''? Container(
             height: 300.0,
             width: width - 100.0,
             padding: EdgeInsets.all(0.0),
@@ -265,13 +282,31 @@ class ChatScreen extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(10.0),
             ),
+          ): Container(
+            height: 300.0,
+            width: width - 100.0,
+            padding: EdgeInsets.all(0.0),
+            clipBehavior: Clip.antiAliasWithSaveLayer,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            child: BetterPlayer.network(
+              model.video,
+              betterPlayerConfiguration: BetterPlayerConfiguration(
+                autoDispose: false,
+                autoDetectFullscreenAspectRatio: false,
+                autoDetectFullscreenDeviceOrientation: false,
+                expandToFill: false,
+                deviceOrientationsOnFullScreen: [DeviceOrientation.portraitUp]
+
+            ),),
           ),
         ),
       ),
     );
   }
 
-  Widget bottomSheetBuilder(context){
+  Widget bottomSheetChooseBuilder(context){
     var cubit = ChatCubit.get(context);
     return Container(
       height: 80.0,
@@ -281,7 +316,59 @@ class ChatScreen extends StatelessWidget {
           Expanded(
             child: InkWell(
               onTap: (){
+                Navigator.pop(context);
+                showBottomSheet(context: context, builder: (context)=>bottomSheetBuilder(context,false));
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    Icon(IconBroken.Camera),
+                    SizedBox(width:10.0),
+                    Text('Video')
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Divider(height: 2.0,),
+          Expanded(
+            child: InkWell(
+              onTap: (){
+                Navigator.pop(context);
+                showBottomSheet(context: context, builder: (context)=>bottomSheetBuilder(context,true));
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    Icon(IconBroken.Image),
+                    SizedBox(width: 10.0,),
+                    Text('Photo')
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget bottomSheetBuilder(context,bool image){
+    var cubit = ChatCubit.get(context);
+    return Container(
+      height: 80.0,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: (){
+                if(image)
                 cubit.pickMessageImage(true,receiverId);
+              else
+                cubit.pickMessageVideo(true,receiverId);
                 Navigator.pop(context);
               },
               child: Padding(
@@ -300,7 +387,11 @@ class ChatScreen extends StatelessWidget {
           Expanded(
             child: InkWell(
               onTap: (){
+                if(image)
                 cubit.pickMessageImage(false,receiverId);
+                else 
+                  cubit.pickMessageVideo(false,receiverId);
+
                 Navigator.pop(context);
               },
               child: Padding(

@@ -49,7 +49,6 @@ class MyApp extends StatelessWidget {
               navigatorKey: navigatorKey,
               useInheritedMediaQuery: true,
               locale: DevicePreview.locale(context),
-              builder: DevicePreview.appBuilder,
               debugShowCheckedModeBanner: false,
               theme: lightTheme,
               home: screen,

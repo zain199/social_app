@@ -51,7 +51,12 @@ dependencies:
   get: ^4.6.1
   cached_network_image: ^3.2.0
   flutter_keyboard_visibility: ^5.1.0
+  video_player: ^2.2.16
+  chewie: ^1.2.2
+  better_player: ^0.0.81
 
+dependency_overrides:
+  device_preview: 0.8.0
 
 dev_dependencies:
   flutter_test:
